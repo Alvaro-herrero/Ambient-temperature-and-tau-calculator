@@ -1,45 +1,64 @@
-# CSV temperature plots
+﻿# Análisis de temperaturas desde CSV
 
-Install Python 3.10 or newer, then install the dependencies once:
+Procesa tus mediciones localmente y genera gráficas de temperatura frente a su
+derivada, con un ajuste lineal para cada serie. El proyecto se distribuye sin
+datos ni gráficas precalculadas: tú añades tus archivos en tu ordenador.
 
-```sh
-python -m pip install -r requirements.txt
+## Instalación
+
+Necesitas Python 3.10 o posterior. Desde la carpeta del proyecto, en PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Put your CSV files in the same folder as `read_data.py` and run:
+## Uso
 
-```sh
-python read_data.py
+1. Copia tus tres CSV (o cualquier cantidad) dentro de `data/`.
+2. Ejecuta desde la carpeta del proyecto:
+
+   ```powershell
+   .\.venv\Scripts\python.exe read_data.py
+   ```
+
+El programa busca todos los CSV de `data/`, muestra las filas procesadas y la
+pendiente y el intercepto de cada serie. Guarda un PNG junto a cada CSV con el
+mismo nombre: `data/medidas.csv` produce `data/medidas.png`. Si ese PNG ya existe,
+lo sobrescribe. Cada ejecución vuelve a leer los archivos disponibles; no vigila
+la carpeta en segundo plano ni busca en subcarpetas.
+
+También puedes procesar otra carpeta local:
+
+```powershell
+.\.venv\Scripts\python.exe read_data.py "C:\ruta\a\mis\mediciones"
 ```
 
-The script discovers all `.csv` files (including `.CSV`), prints the row count
-and linear fit results, and plots temperature (y) against its time derivative (x)
-for each run, including the fitted line. It saves a graph beside each file with the same
-name and a `.png` extension. Existing graphs with that name are overwritten.
-Add more CSV files and run the command again to process them.
-Files are discovered each time you run the command;
-the script does not watch the folder in the background.
+Si no hay CSV, muestra un aviso. Si un archivo falla con alguno de los errores
+controlados, informa del problema y continúa con los demás.
 
-To process another folder:
+## Formato de los datos
 
-```sh
-python read_data.py "path/to/measurements"
-```
+La primera fila contiene los nombres de las columnas. La primera columna es el
+tiempo en segundos; cada columna restante es una serie de temperaturas en grados
+Celsius. Los nombres de las columnas son libres. Se admiten archivos UTF-8 con
+o sin BOM y una fila opcional de unidades con `s` en la primera columna.
 
-The first CSV column contains time in seconds. Every remaining column is a run
-containing temperatures in degrees Celsius. Column names can be chosen freely:
+Usa tiempos numéricos con un intervalo constante y distinto de cero, comas como
+separador y punto decimal. Una celda de temperatura vacía termina esa serie:
+los valores posteriores de esa columna no se procesan. Cada serie necesita al
+menos seis muestras y derivadas que no sean todas iguales para obtener un ajuste
+lineal válido. Evita tiempos vacíos y valores no finitos.
 
-```csv
-Time,Temperature Run 1,Temperature Run 2
-0,67.23,73.05
-0.05,67.21,73.09
-```
+La derivada se calcula mediante una diferencia central de cinco puntos. Los dos
+primeros y los dos últimos puntos quedan fuera del ajuste. La recta ajustada es
+`temperatura = pendiente * derivada + intercepto`.
 
-UTF-8 files with or without a BOM are supported. An optional units row with `s`
-in the first column is skipped. Derivatives use a five-point central difference
-and require uniformly spaced times. The first and last two samples have no
-derivative. Blank temperature cells are read as NaN and passed through to the
-derivatives and linear regression.
-Invalid files are reported by filename while
-the remaining files continue processing; the command exits with status 1 if any
-file fails.
+## Archivos locales y Git
+
+`data/` está reservada para archivos locales; Git solo incluye su marcador vacío
+`.gitkeep`. Además, `.gitignore` excluye los CSV y PNG con extensiones `.csv`,
+`.CSV`, `.png` y `.PNG` en todo el proyecto. No fuerces su inclusión con
+`git add -f`. El programa no sube los datos a ningún servicio.
+
+Estas reglas no eliminan archivos que ya estuvieran en commits anteriores.

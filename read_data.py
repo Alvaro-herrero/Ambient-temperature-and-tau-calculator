@@ -1,4 +1,4 @@
-"""Read and plot every CSV in this script's folder (or a supplied folder)."""
+"""Read and plot local CSV files in data/ (or a supplied folder)."""
 
 import argparse
 import csv
@@ -87,8 +87,8 @@ def plot_file(path, runs, results):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "folder", nargs="?", type=Path, default=Path(__file__).resolve().parent,
-        help="Folder containing CSV files (default: this script's folder).",
+        "folder", nargs="?", type=Path, default=Path(__file__).resolve().parent / "data",
+        help="Folder containing CSV files (default: data/ beside this script).",
     )
     args = parser.parse_args(argv)
     if not args.folder.is_dir():
